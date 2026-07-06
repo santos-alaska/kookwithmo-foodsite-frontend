@@ -97,49 +97,7 @@ export const allMealPlans = {
 };
 
 
-// export const menuOptions = [
-//     {
-//         category: 'Main Meals',
-//         items: [
-//             { name: 'Jollof Rice with Chicken', price: 3500 },
-//             { name: 'Fried Rice with Turkey', price: 3800 },
-//             { name: 'Bukka Stew with Beef', price: 4000 },
-//             { name: 'Ofada Rice and Sauce', price: 4200 },
-//         ],
-//     },
-//     {
-//         category: "Chef's Special",
-//         items: [
-//             { name: 'Efo Riro Soup', price: 2500 },
-//             { name: 'Egusi Soup', price: 2500 },
-//             { name: 'Ogbono Soup', price: 2200 },
-//         ],
-//     },
-//     // {
-//     //     category: 'Stews & Soup',
-//     //     items: [
-//     //         { name: 'Efo Riro Soup', price: 2500 },
-//     //         { name: 'Egusi Soup', price: 2500 },
-//     //         { name: 'Ogbono Soup', price: 2200 },
-//     //     ],
-//     // },
-//     {
-//         category: 'Breakfast',
-//         items: [
-//             { name: 'Full Nigerian Breakfast', price: 3000 },
-//             { name: 'Avocado Toast', price: 2800 },
-//             { name: 'Pancakes with Syrup', price: 2500 },
-//         ],
-//     },
-//     {
-//         category: 'Salad',
-//         items: [
-//             { name: 'Mixed Veggies Salad', price: 2000 },
-//             { name: 'Prawn Salad', price: 3500 },
-//             { name: 'Fruit Salad', price: 1800 },
-//         ],
-//     },
-// ];
+
 
 export const menuOptions = [
     {
