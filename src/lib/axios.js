@@ -11,8 +11,8 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.MODE === 'development' ? '/api' : 'https://kookwithmo-foodsite-backend.onrender.com/api',
-
+    // baseURL: import.meta.env.MODE === 'development' ? '/api' : 'https://kookwithmo-foodsite-backend.onrender.com/api',
+    baseURL: import.meta.env.MODE === 'development' ? '/api' : 'https://api.kookwithmo.com/api',
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
