@@ -261,16 +261,14 @@ const OrderSummaryPage = () => {
 
     // 3. CREATE THE NEW WHATSAPP HANDLER
     const handleProceed = () => {
-        if (!user) {
-            alert("Please log in to purchase a meal plan.");
-            navigate('/login');
-            return;
-        }
-
-        // Build the message string using data from the planSelection and user objects
+        // Build the message string. Login is optional: include account details only if logged in.
         let message = `*New Meal Plan Order*\n\n`;
-        message += `*Customer:* ${user.name}\n`;
-        message += `*Email:* ${user.email}\n\n`;
+        if (user) {
+            message += `*Customer:* ${user.name}\n`;
+            message += `*Email:* ${user.email}\n\n`;
+        } else {
+            message += `*Customer:* Guest (not logged in)\n\n`;
+        }
         message += `*--- ORDER DETAILS ---*\n`;
         message += `*Plan:* ${planSelection.plan}\n`;
         message += `*Duration:* ${planSelection.duration}\n`;

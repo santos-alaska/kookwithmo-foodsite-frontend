@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import bg from '/bg-img.png';
 import { useUserStore } from '../stores/useUserStore';
 
@@ -25,6 +25,7 @@ const FormInput = ({ label, name, type, placeholder, value, onChange }) => (
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -44,7 +45,7 @@ const LoginPage = () => {
 
         const user = useUserStore.getState().user;
         if (user) {
-            navigate('/');
+            navigate(location.state?.from || '/', { replace: true });
         }
     };
 

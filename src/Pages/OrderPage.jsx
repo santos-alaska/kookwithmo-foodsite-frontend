@@ -112,10 +112,6 @@ const OrderPage = () => {
     }, [mealPacks]);
 
     const handleWhatsAppPayment = () => {
-        if (!user) {
-            alert("Please log in to make an order.");
-            return;
-        }
         const aggregatedMeals = mealPacks.reduce((acc, pack) => {
             if (!pack.meal) return acc;
             if (acc[pack.meal]) {
@@ -126,7 +122,7 @@ const OrderPage = () => {
             return acc;
         }, {});
         const orderSummaryList = Object.values(aggregatedMeals);
-        let message = `*New Order from ${customerDetails.name || user.name}*\n\n`;
+        let message = `*New Order from ${customerDetails.name || user?.name || 'Guest'}*\n\n`;
         message += `*Contact:* ${customerDetails.phone}\n`;
         message += `*Address:* ${customerDetails.address}\n\n`;
         message += `*--- ORDER DETAILS ---*\n`;

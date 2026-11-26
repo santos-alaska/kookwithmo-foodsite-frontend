@@ -35,7 +35,7 @@ const Navbar = () => {
                         <Link to="/" className="hover:text-white transition-colors">Home</Link>
                         <Link to="/menu" className="hover:text-white transition-colors">Menu</Link>
                         <Link to="/meal-plan" className="hover:text-white transition-colors">Meal Plan</Link>
-                        {user && <Link to="/order" className="hover:text-white transition-colors">Place Order</Link>}
+                        <Link to="/order" className="hover:text-white transition-colors">Place Order</Link>
                     </div>
 
                     {/* User-specific links (My Plan & Admin) */}
@@ -104,7 +104,7 @@ const Navbar = () => {
                         <Link to="/" onClick={handleLinkClick} className="hover:text-white transition-colors">Home</Link>
                         <Link to="/menu" onClick={handleLinkClick} className="hover:text-white transition-colors">Menu</Link>
                         <Link to="/meal-plan" onClick={handleLinkClick} className="hover:text-white transition-colors">Meal Plan</Link>
-                        {user && <Link to="/order" onClick={handleLinkClick} className="hover:text-white transition-colors">Place Order</Link>}
+                        <Link to="/order" onClick={handleLinkClick} className="hover:text-white transition-colors">Place Order</Link>
 
                         {/* User-specific Section */}
                         {user && (

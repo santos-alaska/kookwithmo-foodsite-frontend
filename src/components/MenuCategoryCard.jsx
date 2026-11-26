@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { useUserStore } from '../stores/useUserStore';
+import { Link } from 'react-router-dom';
+
 
 const MenuCategoryCard = ({ imageSrc, title, description, buttonText, imagePosition = 'left', slug }) => {
     const containerClasses = `
@@ -14,7 +14,7 @@ const MenuCategoryCard = ({ imageSrc, title, description, buttonText, imagePosit
     ${imagePosition === 'right' ? 'md:items-end md:text-right' : ''}
   `;
 
-    const { user, checkAuth, checkingAuth } = useUserStore();
+
 
 
     return (
@@ -35,7 +35,7 @@ const MenuCategoryCard = ({ imageSrc, title, description, buttonText, imagePosit
                         {description}
                     </p>
                     <Link
-                        to={user ? `/full-menu#${slug}` : '/login'}
+                        to={`/full-menu#${slug}`}
                         className="font-sans font-semibold text-black bg-stone-200 px-8 py-3 rounded-lg mt-6 hover:bg-white transition-colors duration-300">
                         {buttonText}
                     </Link>
