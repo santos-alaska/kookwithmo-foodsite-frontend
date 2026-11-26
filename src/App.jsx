@@ -21,6 +21,7 @@ import MealPlanDetailPage from './Pages/MealPlanDetailPage'
 import OrderSummaryPage from './Pages/OrderSummaryPage'
 import AdminPage from './Pages/AdminPage'
 import MyPlanPage from './Pages/MyPlanPage'
+import PaymentCallbackPage from './Pages/PaymentCallbackPage'
 
 const App = () => {
 
@@ -52,6 +53,7 @@ const App = () => {
 
 
         <Route path="/order" element={<OrderPage />} />
+        <Route path="/payment/callback" element={<PaymentCallbackPage />} />
         {/* Admin is the only page that requires login. Wait for the auth check so a refresh doesn't bounce admins away. */}
         <Route
           path="/admin"

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../lib/axios';
 import { toast } from "react-hot-toast";
-import { FiX, FiEdit2, FiDollarSign, FiUsers, FiShoppingBag } from 'react-icons/fi';
+import { FiX, FiEdit2, FiDollarSign, FiUsers, FiShoppingBag, FiCreditCard } from 'react-icons/fi';
 
 const PLAN_TYPES = [
     { value: 'weight-loss', label: 'Weight Loss Sculpt Plan' },
@@ -38,6 +38,10 @@ const AdminPage = () => {
     const [newPrice, setNewPrice] = useState('');
     const [isSavingPrice, setIsSavingPrice] = useState(false);
 
+    // Paystack orders state
+    const [orders, setOrders] = useState([]);
+    const [loadingOrders, setLoadingOrders] = useState(false);
+
     // ── Fetch users ──
     useEffect(() => {
         const fetchUsers = async () => {
@@ -66,6 +70,23 @@ const AdminPage = () => {
             }
         };
         fetchProducts();
+    }, [activeTab]);
+
+    // ── Fetch paid Paystack orders when tab switches ──
+    useEffect(() => {
+        if (activeTab !== 'orders') return;
+        const fetchOrders = async () => {
+            setLoadingOrders(true);
+            try {
+                const res = await axios.get("/payments/orders");
+                setOrders(res.data || []);
+            } catch (error) {
+                toast.error(error?.response?.data?.message || "Failed to load orders");
+            } finally {
+                setLoadingOrders(false);
+            }
+        };
+        fetchOrders();
     }, [activeTab]);
 
     // ── Plan modal ──
@@ -165,6 +186,16 @@ const AdminPage = () => {
                 >
                     <FiShoppingBag size={16} /> Manage Prices
                 </button>
+                <button
+                    onClick={() => setActiveTab('orders')}
+                    className={`flex items-center gap-2 px-5 py-3 font-medium text-sm rounded-t-lg transition-colors ${
+                        activeTab === 'orders'
+                            ? 'bg-gray-800 text-green-400 border-b-2 border-green-400'
+                            : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <FiCreditCard size={16} /> Paid Orders
+                </button>
             </div>
 
             {/* ── Users Tab ── */}
@@ -201,6 +232,57 @@ const AdminPage = () => {
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* ── Paid Orders (Paystack) Tab ── */}
+            {activeTab === 'orders' && (
+                <div className="overflow-x-auto">
+                    {loadingOrders ? (
+                        <div className="py-20 text-center text-gray-400">Loading orders...</div>
+                    ) : orders.length === 0 ? (
+                        <div className="py-20 text-center text-gray-400">No paid orders yet.</div>
+                    ) : (
+                        <table className="min-w-full bg-gray-800 rounded-lg overflow-hidden text-sm">
+                            <thead className="bg-gray-700">
+                                <tr>
+                                    <th className="p-3 text-left">Date</th>
+                                    <th className="p-3 text-left">Customer</th>
+                                    <th className="p-3 text-left">Order</th>
+                                    <th className="p-3 text-right">Amount</th>
+                                    <th className="p-3 text-left">Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {orders.map(order => (
+                                    <tr key={order._id} className="border-t border-gray-700 align-top">
+                                        <td className="p-3 whitespace-nowrap">{new Date(order.paidAt || order.createdAt).toLocaleString()}</td>
+                                        <td className="p-3">
+                                            <div className="font-medium">{order.customer?.name}{!order.user && <span className="text-gray-500"> (guest)</span>}</div>
+                                            <div className="text-gray-400">{order.customer?.email}</div>
+                                            {order.customer?.phone && <div className="text-gray-400">{order.customer.phone}</div>}
+                                            {order.customer?.address && <div className="text-gray-400">{order.customer.address}</div>}
+                                        </td>
+                                        <td className="p-3">
+                                            {order.type === 'menu' ? (
+                                                <ul>{order.items.map(i => <li key={i.name}>{i.quantity}x {i.name}</li>)}</ul>
+                                            ) : (
+                                                <div>
+                                                    {order.mealPlan?.planTitle} — {order.mealPlan?.option}
+                                                    <div className="text-gray-400">
+                                                        {order.planActivated ? 'Plan auto-activated' : 'Activate manually (guest)'}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {order.specialNotes && <div className="text-gray-400 mt-1">Note: {order.specialNotes}</div>}
+                                        </td>
+                                        <td className="p-3 text-right whitespace-nowrap">₦{order.totalAmount.toLocaleString()}</td>
+                                        <td className="p-3 text-gray-400">{order.reference}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             )}
 

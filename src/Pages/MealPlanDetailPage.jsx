@@ -137,6 +137,7 @@ const MealPlanDetailPage = () => {
 
     const handleSelectPlan = (name, price) => {
         const selection = {
+            planId,
             plan: planData.title.replace(/\s\+.*/, ''),
             duration: name,
             meals: planData.whatYouGet[0],

@@ -1,12 +1,13 @@
-// ------------------------------------------without paystack connect through whatsapp
+// Order page: pay online with Paystack, or send the order through WhatsApp
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { FiPlus, FiMinus } from 'react-icons/fi';
-// `usePaystackPayment` is no longer needed
 import { useUserStore } from '../stores/useUserStore';
 import bg from '/bg-img.png';
 import { menuOptions } from '../constants/data';
 import { useMenuPrices } from '../hooks/useMenuPrices';
+import axios from '../lib/axios';
+import { toast } from 'react-hot-toast';
 
 // Reusable Input Component (No changes)
 const FormInput = ({ label, name, placeholder, value, onChange, type = 'text' }) => (
@@ -25,7 +26,7 @@ const FormInput = ({ label, name, placeholder, value, onChange, type = 'text' })
 );
 
 // Order Summary Component
-const OrderSummary = ({ mealPacks, setMealPacks, specialNotes, setSpecialNotes, totalPrice, handlePayment }) => {
+const OrderSummary = ({ mealPacks, setMealPacks, specialNotes, setSpecialNotes, totalPrice, handlePayment, handlePaystackPayment, paying }) => {
     const aggregatedMeals = mealPacks.reduce((acc, pack) => {
         if (!pack.meal) return acc;
         if (acc[pack.meal]) {
@@ -76,8 +77,11 @@ const OrderSummary = ({ mealPacks, setMealPacks, specialNotes, setSpecialNotes, 
                 </div>
             </section>
             <footer className="text-center pt-8">
-                <button onClick={handlePayment} className="font-sans font-semibold text-black bg-stone-200 px-12 py-3 rounded-lg hover:bg-white transition-colors duration-300">
-                    Place Order via WhatsApp
+                <button onClick={handlePaystackPayment} disabled={paying} className="font-sans font-semibold text-black bg-stone-200 px-12 py-3 rounded-lg hover:bg-white transition-colors duration-300 w-full disabled:opacity-60">
+                    {paying ? 'Redirecting to Paystack...' : `Pay ₦${totalPrice.toLocaleString()} Now`}
+                </button>
+                <button onClick={handlePayment} className="font-sans text-stone-300 border border-stone-500 px-12 py-3 rounded-lg hover:bg-stone-800 transition-colors duration-300 w-full mt-3">
+                    Or order via WhatsApp
                 </button>
             </footer>
         </div>
@@ -88,11 +92,23 @@ const OrderSummary = ({ mealPacks, setMealPacks, specialNotes, setSpecialNotes, 
 const OrderPage = () => {
     const WHATSAPP_NUMBER = "2348136570214";
     const [view, setView] = useState('form');
-    const [customerDetails, setCustomerDetails] = useState({ name: '', phone: '', address: '' });
+    const [customerDetails, setCustomerDetails] = useState({ name: '', email: '', phone: '', address: '' });
+    const [paying, setPaying] = useState(false);
     const [mealPacks, setMealPacks] = useState([{ id: 1, category: '', meal: '', price: 0 }]);
     const [specialNotes, setSpecialNotes] = useState('');
     const [totalPrice, setTotalPrice] = useState(0);
     const { user } = useUserStore();
+
+    // Prefill name/email for logged-in users (still editable)
+    useEffect(() => {
+        if (user) {
+            setCustomerDetails(prev => ({
+                ...prev,
+                name: prev.name || user.name || '',
+                email: prev.email || user.email || '',
+            }));
+        }
+    }, [user]);
     const { getPriceByName } = useMenuPrices();
 
     // Merge live DB prices over data.js fallback prices
@@ -138,6 +154,31 @@ const OrderPage = () => {
         window.open(whatsappUrl, '_blank');
     };
 
+    const handlePaystackPayment = async () => {
+        const quantities = mealPacks.reduce((acc, pack) => {
+            if (pack.meal) acc[pack.meal] = (acc[pack.meal] || 0) + 1;
+            return acc;
+        }, {});
+        const items = Object.entries(quantities).map(([name, quantity]) => ({ name, quantity }));
+        if (items.length === 0) {
+            toast.error('Please add at least one meal to your order.');
+            return;
+        }
+        setPaying(true);
+        try {
+            const res = await axios.post('/payments/paystack/initialize', {
+                type: 'menu',
+                customer: customerDetails,
+                items,
+                specialNotes,
+            });
+            window.location.href = res.data.authorizationUrl;
+        } catch (error) {
+            setPaying(false);
+            toast.error(error?.response?.data?.message || 'Could not start payment. Please try again.');
+        }
+    };
+
     const handleProceedToOrder = (e) => {
         e.preventDefault();
         const validPacks = mealPacks.filter(pack => pack.meal);
@@ -145,8 +186,8 @@ const OrderPage = () => {
             alert('Please add at least one meal to your order.');
             return;
         }
-        if (!customerDetails.name || !customerDetails.phone || !customerDetails.address) {
-            alert('Please fill in your details (Name, Phone, Address).');
+        if (!customerDetails.name || !customerDetails.email || !customerDetails.phone || !customerDetails.address) {
+            alert('Please fill in your details (Name, Email, Phone, Address).');
             return;
         }
         setMealPacks(validPacks);
@@ -188,6 +229,7 @@ const OrderPage = () => {
                                 <section className="space-y-4">
                                     <h2 className="font-sans font-semibold text-stone-200">Your Details</h2>
                                     <FormInput label="Name" name="name" placeholder="Enter your full name" value={customerDetails.name} onChange={handleCustomerDetailsChange} />
+                                    <FormInput label="Email" name="email" type="email" placeholder="you@example.com" value={customerDetails.email} onChange={handleCustomerDetailsChange} />
                                     <FormInput label="Phone Number" name="phone" placeholder="080..." value={customerDetails.phone} onChange={handleCustomerDetailsChange} />
                                     <FormInput label="Delivery Address" name="address" placeholder="Street, house number..." value={customerDetails.address} onChange={handleCustomerDetailsChange} />
                                 </section>
@@ -243,6 +285,8 @@ const OrderPage = () => {
                             setSpecialNotes={setSpecialNotes}
                             totalPrice={totalPrice}
                             handlePayment={handleWhatsAppPayment}
+                            handlePaystackPayment={handlePaystackPayment}
+                            paying={paying}
                         />
                     )}
                 </div>

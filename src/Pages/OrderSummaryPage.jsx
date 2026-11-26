@@ -231,72 +231,79 @@
 
 
 
-// --------------------------------------------------------- integarted whatsapp-------------------------------
-import React from 'react';
+// ------------------------------- Paystack + WhatsApp -------------------------------
+import React, { useState } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { FiArrowLeft, FiPlus } from 'react-icons/fi';
+import { toast } from 'react-hot-toast';
 import bg from '/bg-img.png';
+import axios from '../lib/axios';
 import { useUserStore } from '../stores/useUserStore';
-// We no longer need the Paystack hook
-// import { usePaystackPayment } from 'react-paystack';
+
+const WHATSAPP_NUMBER = "2348136570214";
 
 const OrderSummaryPage = () => {
-    // 1. DEFINE YOUR WHATSAPP NUMBER HERE
-    const WHATSAPP_NUMBER = "2348136570214"; // Replace with your actual WhatsApp number
-
     const { state } = useLocation();
     const navigate = useNavigate();
     const planSelection = state?.plan;
-
-    // Get the authenticated user from the store
     const { user } = useUserStore();
 
-    // If no plan data was passed, redirect back to the meal plan selection page
+    const [customer, setCustomer] = useState({
+        name: user?.name || '',
+        email: user?.email || '',
+        phone: '',
+    });
+    const [paying, setPaying] = useState(false);
+
     if (!planSelection) {
         return <Navigate to="/meal-plan" />;
     }
 
-    // 2. REMOVE ALL PAYSTACK-RELATED CODE
-    // (config, initializePayment, onSuccess, onClose, verifyPaymentOnBackend are no longer needed)
+    const handleChange = (e) => setCustomer(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-    // 3. CREATE THE NEW WHATSAPP HANDLER
-    const handleProceed = () => {
-        // Build the message string. Login is optional: include account details only if logged in.
-        let message = `*New Meal Plan Order*\n\n`;
-        if (user) {
-            message += `*Customer:* ${user.name}\n`;
-            message += `*Email:* ${user.email}\n\n`;
-        } else {
-            message += `*Customer:* Guest (not logged in)\n\n`;
+    const handlePaystack = async () => {
+        if (!customer.name || !customer.email) {
+            toast.error('Please enter your name and email.');
+            return;
         }
-        message += `*--- ORDER DETAILS ---*\n`;
+        setPaying(true);
+        try {
+            const res = await axios.post('/payments/paystack/initialize', {
+                type: 'meal-plan',
+                planId: planSelection.planId,
+                option: planSelection.duration,
+                customer,
+            });
+            window.location.href = res.data.authorizationUrl;
+        } catch (error) {
+            setPaying(false);
+            toast.error(error?.response?.data?.message || 'Could not start payment. Please try again.');
+        }
+    };
+
+    const handleWhatsApp = () => {
+        let message = `*New Meal Plan Order*\n\n`;
+        message += `*Customer:* ${customer.name || user?.name || 'Guest'}\n`;
+        if (customer.email) message += `*Email:* ${customer.email}\n`;
+        if (customer.phone) message += `*Phone:* ${customer.phone}\n`;
+        message += `\n*--- ORDER DETAILS ---*\n`;
         message += `*Plan:* ${planSelection.plan}\n`;
         message += `*Duration:* ${planSelection.duration}\n`;
         message += `*Includes:* ${planSelection.meals}\n\n`;
         message += `*TOTAL: ₦${planSelection.price.toLocaleString()}*`;
 
-        // Encode the message for a URL
-        const encodedMessage = encodeURIComponent(message);
-
-        // Create the WhatsApp URL
-        const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
-
-        // Open WhatsApp in a new tab
-        window.open(whatsappUrl, '_blank');
-
-        // Optional: you can show a confirmation message
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
         alert("You are being redirected to WhatsApp to complete your order. Your plan will be activated by an admin after payment is confirmed.");
-
-        // Optional: redirect user to their profile or a "pending" page
         navigate('/');
     };
+
+    const inputClass = "w-full bg-transparent border border-stone-500 rounded-lg p-3 text-white placeholder-stone-400 focus:ring-1 focus:ring-stone-200 focus:outline-none";
 
     return (
         <div className="relative w-full min-h-screen bg-black text-stone-200">
             <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: `url(${bg})` }} />
             <div className="absolute inset-0 bg-black/90 z-10" />
 
-            <main className="relative z-20 max-w-lg mx-auto py-8 px-4 font-sans flex flex-col h-screen pt-24 md:pt-28">
+            <main className="relative z-20 max-w-lg mx-auto py-8 px-4 font-sans flex flex-col min-h-screen pt-24 md:pt-28">
                 <header className="text-center mb-10">
                     <h1 className="font-display text-3xl uppercase tracking-wider">Your Order</h1>
                 </header>
@@ -327,12 +334,25 @@ const OrderSummaryPage = () => {
                             ₦{planSelection.price.toLocaleString()}
                         </span>
                     </div>
+
+                    <div className="space-y-3 !mt-8 text-base">
+                        <input name="name" value={customer.name} onChange={handleChange} placeholder="Full name" className={inputClass} />
+                        <input name="email" type="email" value={customer.email} onChange={handleChange} placeholder="Email (for your receipt)" className={inputClass} />
+                        <input name="phone" value={customer.phone} onChange={handleChange} placeholder="Phone number (optional)" className={inputClass} />
+                        {!user && (
+                            <p className="text-xs text-stone-400">
+                                Tip: log in before paying and your plan is activated on your account automatically.
+                            </p>
+                        )}
+                    </div>
                 </div>
 
-                <footer className="text-center pt-8">
-                    {/* The "Proceed to Order" button now triggers the WhatsApp flow */}
-                    <button onClick={handleProceed} className="font-sans font-semibold text-black bg-stone-200 px-12 py-3 rounded-lg hover:bg-white transition-colors duration-300 w-full">
-                        Order via WhatsApp
+                <footer className="text-center pt-8 space-y-3">
+                    <button onClick={handlePaystack} disabled={paying} className="font-sans font-semibold text-black bg-stone-200 px-12 py-3 rounded-lg hover:bg-white transition-colors duration-300 w-full disabled:opacity-60">
+                        {paying ? 'Redirecting to Paystack...' : `Pay ₦${planSelection.price.toLocaleString()} Now`}
+                    </button>
+                    <button onClick={handleWhatsApp} className="font-sans text-stone-300 border border-stone-500 px-12 py-3 rounded-lg hover:bg-stone-800 transition-colors duration-300 w-full">
+                        Or order via WhatsApp
                     </button>
                 </footer>
             </main>
